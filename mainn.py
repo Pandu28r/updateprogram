@@ -912,5 +912,6 @@ class APP(ctk.CTk):
 
 if __name__ == "__main__":
     inisialisasi_port()
+    print('anjay')
     app = APP() 
     app.mainloop()

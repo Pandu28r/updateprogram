@@ -1,0 +1,1 @@
+ self.gerak_by_motion_v4(nama_file)

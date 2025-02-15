@@ -144,13 +144,14 @@ class APP(ctk.CTk):
         self.tabKetiga = ctk.CTkTabview(self.tabView.tab("EDIT MOTION"), fg_color="#3D3C40")
         self.tabKetiga.pack(padx=10,pady=10)
 
-        self.tabKetiga.add("Time")
         self.tabKetiga.add("Degree")
+        self.tabKetiga.add("Time")
 
         self.tabKeempat = ctk.CTkTabview(self.tabView.tab("LIHAT MOTION"), fg_color="#3D3C40", height=275, width=330)
         self.tabKeempat.pack(padx=10,pady=10)
 
         self.tabKeempat.add("Per-Step")
+        self.tabKeempat.add("Per-Step new")
         self.tabKeempat.add("Play Motion")
 
     # SWITCH VAR
@@ -199,25 +200,42 @@ class APP(ctk.CTk):
         self.button18.place(relx=0.6,rely=0.77)
 
         # TAB LIHAT MOTION
+        self.entry_name_lihat = ctk.CTkEntry(self.tabView.tab("LIHAT MOTION"), placeholder_text="Masukkan nama motion", width=170, height=30)
+        self.entry_name_lihat.place(relx=0.35,rely=0.83)
+
         self.switch_per_step = ctk.CTkSwitch(master=self.tabKeempat.tab("Per-Step"), text="OFF", command=self.kondisi_perstep,variable=self.switch_var_kondisi_perstep, onvalue="on", offvalue="off")
         self.switch_per_step.pack(pady=20)
         self.switch_per_step.place(relx=0.4,rely=0.07)
         self.label_perstep = ctk.CTkLabel(master=self.tabKeempat.tab("Per-Step"), text="Step  ", font=("Arial", 18))
         self.label_perstep.place(relx=0.35,rely=0.25)
-        self.entry_name_lihat = ctk.CTkEntry(self.tabView.tab("LIHAT MOTION"), placeholder_text="Masukkan nama motion", width=170, height=30)
-        self.entry_name_lihat.place(relx=0.35,rely=0.83)
         self.button_next = ctk.CTkButton(self.tabKeempat.tab("Per-Step"), text="<<", command=self.previous_step, fg_color=COLOR, width=100, font=("Arial", 20, "bold"))
         self.button_next.place(relx=0.1,rely=0.55)
         self.button_previous = ctk.CTkButton(self.tabKeempat.tab("Per-Step"), text=">>", command=self.next_step, fg_color=COLOR, width=100, font=("Arial", 20, "bold"))
         self.button_previous.place(relx=0.52,rely=0.55)
+        self.label = ctk.CTkLabel(self.tabKeempat.tab("Per-Step"), text="Semangat Gaiss...")
+        self.label.place(relx=0.33,rely=0.84)
+
+        self.switch_per_step_new = ctk.CTkSwitch(master=self.tabKeempat.tab("Per-Step new"), text="OFF", command=self.kondisi_perstep,variable=self.switch_var_kondisi_perstep, onvalue="on", offvalue="off")
+        self.switch_per_step_new.pack(pady=20)
+        self.switch_per_step_new.place(relx=0.4,rely=0.07)
+        self.label_perstep_new = ctk.CTkLabel(master=self.tabKeempat.tab("Per-Step new"), text="Step  ", font=("Arial", 18))
+        self.label_perstep_new.place(relx=0.35,rely=0.25)
+        self.button_next_new = ctk.CTkButton(self.tabKeempat.tab("Per-Step new"), text="<<", command=self.previous_step, fg_color=COLOR, width=100, font=("Arial", 20, "bold"))
+        self.button_next_new.place(relx=0.1,rely=0.55)
+        self.button_previous_new = ctk.CTkButton(self.tabKeempat.tab("Per-Step new"), text=">>", command=self.next_step, fg_color=COLOR, width=100, font=("Arial", 20, "bold"))
+        self.button_previous_new.place(relx=0.52,rely=0.55)
+        self.label = ctk.CTkLabel(self.tabKeempat.tab("Per-Step new"), text="new")
+        self.label.place(relx=0.44,rely=0.7)
+        self.label = ctk.CTkLabel(self.tabKeempat.tab("Per-Step new"), text="Semangat Gaiss...")
+        self.label.place(relx=0.33,rely=0.84)
+
         self.button_play_motion_v4 = ctk.CTkButton(self.tabKeempat.tab("Play Motion"), text="PLAY MOTION V4", command=self.play_motion_v4, fg_color=COLOR)
         self.button_play_motion_v4.pack(pady=20)
         self.button_play_motion_v5 = ctk.CTkButton(self.tabKeempat.tab("Play Motion"), text="PLAY MOTION V5", command=self.anjay, fg_color=COLOR)
         self.button_play_motion_v5.pack(pady=20)
-        self.button_play_motion_v6 = ctk.CTkButton(self.tabKeempat.tab("Play Motion"), text="PLAY MOTION V6", command=self.anjay, fg_color=COLOR)
+        self.button_play_motion_v6 = ctk.CTkButton(self.tabKeempat.tab("Play Motion"), text="PLAY MOTION V6", command=self.play_motion_v6, fg_color=COLOR)
         self.button_play_motion_v6.pack(pady=20)
-        self.label = ctk.CTkLabel(self.tabView.tab("LIHAT MOTION"), text="Semangat Gaiss...")
-        self.label.place(relx=0.41,rely=0.7)
+
 
 
         # TAB EDIT MOTION
@@ -400,6 +418,11 @@ class APP(ctk.CTk):
             self.switch_var_kaki_kiri.set('off')
 
     def kondisi_all_servo(self):
+        self.kondisi_kepala()
+        self.kondisi_tangan()
+        self.kondisi_kaki()
+        self.kondisi_servo_tangan()
+        self.kondisi_servo_kaki()
         if self.switch_var_kepala.get() == 'on':
             kondisi_kepala = 1
         else:
@@ -544,11 +567,6 @@ class APP(ctk.CTk):
                 else:
                     print("Servo#%d of" % id)
                     self.SERVO_KONDISI_TORQUE[id] -= 1
-        self.kondisi_kepala()
-        self.kondisi_tangan()
-        self.kondisi_kaki()
-        self.kondisi_servo_tangan()
-        self.kondisi_servo_kaki()
         self.kondisi_all_servo()
 
     def on_servo_id(self):
@@ -580,11 +598,6 @@ class APP(ctk.CTk):
                 else:
                     print("Servo#%d of" % id)
                     self.SERVO_KONDISI_TORQUE[id] += 1
-        self.kondisi_kepala()
-        self.kondisi_tangan()
-        self.kondisi_kaki()
-        self.kondisi_servo_tangan()
-        self.kondisi_servo_kaki()
         self.kondisi_all_servo()
 
 
@@ -595,11 +608,11 @@ class APP(ctk.CTk):
     #########       PER-STEP        #########
     def konversi(self, input, Ibawah, Iatas, Obawah, Oatas):
         return (input - Ibawah) / (Iatas - Ibawah) * (Oatas - Obawah)
-
-
-    def view_motion_baru(self):
+    
+    def view_and_play(self, view_play):
         name = self.entry_name_lihat.get()
         path = f'motion_baru/{name}.csv'
+        self.getIdByKondisiTorque()
         if os.path.exists(path):
             try:
                 df = pd.read_csv(path)
@@ -609,37 +622,40 @@ class APP(ctk.CTk):
                 cek_columns =  ['T_XL320', 'T_XM430'] + [f'DXL#{i}' for i in range(27)]
                 time_columns =  ['T_XL320', 'T_XM430']
                 if all(col in df.columns for col in cek_columns_v6):
-                    self.motion_data = df[dxl_columns].values.tolist()
-                    self.time_data = df[time_columns_v6].values.tolist()
+                    if view_play == 1:
+                        return print("Kolom pada file salah.")
                     self.type = 'v6'
-                    self.getIdByKondisiTorque()
                     self.enable_torque(0,27,1)
-                    self.kondisi_kepala()
-                    self.kondisi_tangan()
-                    self.kondisi_kaki()
-                    self.kondisi_servo_tangan()
-                    self.kondisi_servo_kaki()
                     self.kondisi_all_servo()
-                    self.play_motion_gui()
+                    if view_play == 0:
+                        self.motion_data = df[dxl_columns].values.tolist()
+                        self.time_data = df[time_columns_v6].values.tolist()
+                        self.play_motion_gui()
+                    elif view_play == 1:
+                        self.play_motion_v6(path)
                 elif all(col in df.columns for col in cek_columns):
-                    self.motion_data = df[dxl_columns].values.tolist()
-                    self.time_data = df[time_columns].values.tolist()
-                    self.type = 'anjay'
-                    self.getIdByKondisiTorque()
+                    if view_play == 2:
+                        return print("Kolom pada file salah.")
+                    self.type = 'v4'
                     self.enable_torque(0,27,1)
-                    self.kondisi_kepala()
-                    self.kondisi_tangan()
-                    self.kondisi_kaki()
-                    self.kondisi_servo_tangan()
-                    self.kondisi_servo_kaki()
                     self.kondisi_all_servo()
-                    self.play_motion_gui()
+                    if view_play == 0:
+                        self.motion_data = df[dxl_columns].values.tolist()
+                        self.time_data = df[time_columns].values.tolist()
+                        self.play_motion_gui()
+                    elif view_play == 1:
+                        self.gerak_by_motion_v4(path)
                 else:
                     print("Kolom pada file salah.")
             except Exception as e:
                 print(f"Terjadi kesalahan saat memuat file: {e}")
+                        
+
         else:
             print("File motion tidak ditemukan. Pastikan nama file sesuai dan berada di folder 'motion_baru'.")
+
+    def view_motion_baru(self):
+        self.view_and_play(0)
 
     def play_motion_gui(self):
         step_data = self.motion_data[self.index]
@@ -725,9 +741,11 @@ class APP(ctk.CTk):
 
     #########       PLAY MOTION        #########
     def play_motion_v4(self):
-        nama_file = self.entry_name_lihat.get()
-        print(nama_file)
-        self.gerak_by_motion_v4(nama_file)
+        self.view_and_play(1)
+        print("Selesai")
+    
+    def play_motion_v6(self):
+        self.view_and_play(2)
         print("Selesai")
 
 
@@ -752,6 +770,37 @@ class APP(ctk.CTk):
         
         file.close()
         return MOTION_DXL
+    
+    
+    def bacaFile_v3(self, FILE_NAME):
+        global MOTION_TIME_XM430, MOTION_TIME_XL320
+        global MOTION_HEAD, MOTION_HAND, MOTION_FEET, MOTION_DXL, MOTION_DXL_XL320, MOTION_DXL_XM430
+        
+        file = open(FILE_NAME)
+        csvreader = csv.reader(file)
+        header = next(csvreader)
+
+        MOTION_TIME_XM430 = []
+        MOTION_TIME_XL320 = []
+        MOTION_HEAD = []
+        MOTION_HAND = []
+        MOTION_FEET = []
+        MOTION_DXL = []
+        MOTION_DXL_XL320 = []
+        MOTION_DXL_XM430 = []
+        for row in csvreader:
+            MOTION_TIME_XL320.append([row[i] for i in range(1, 14)])
+            MOTION_TIME_XM430.append([row[i] for i in range(14, 28)])
+            MOTION_DXL.append(row[28:])
+
+            MOTION_DXL_XL320.append(row[28:41])
+            MOTION_DXL_XM430.append(row[41:54])
+
+            MOTION_HEAD.append(row[28:31])
+            MOTION_HAND.append(row[31:43])
+            MOTION_FEET.append(row[43:])
+        
+        file.close()
     
     def getIndexByNotElement(self,array,element):
         j = 0
@@ -786,8 +835,6 @@ class APP(ctk.CTk):
         return index_xl320, index_xm430
 
     def gerak_by_motion_v4(self, NAMA_FILE, THRESHOLD_XL320=10, THRESHOLD_XM430=5,awal=1):
-        global DXL_XM430
-        DXL_XM430 = [13,14,15,16,17,18,19,20,21,22,23,24,25,26]
         print(NAMA_FILE)
         #bacaFile(FILE2)
         self.bacaFile(NAMA_FILE)
@@ -861,19 +908,19 @@ class APP(ctk.CTk):
                 for DXL_ID in DXL_IDS:
                     if DXL_ID in DXL_XM430:
                         dxl_getdata_result = groupSyncRead_XM430.isAvailable(DXL_ID, XM430_ADDR_PRESENT_POSITION, XM430_LEN_PRESENT_POSITION)
-                        #if dxl_getdata_result != True:
-                        #  print("[ID:%03d] groupBulkRead getdata failed" % DXL_ID)
+                        if dxl_getdata_result != True:
+                         print("[ID:%03d] groupBulkRead getdata failed" % DXL_ID)
                         sudut = groupSyncRead_XM430.getData(DXL_ID, XM430_ADDR_PRESENT_POSITION, XM430_LEN_PRESENT_POSITION)
                         dxl_present_position_xm430.append (self.konversi(sudut,0,4095,0,360))
 
                         dxl_getdata_result = groupSyncReadMove_XM430.isAvailable(DXL_ID, 122, 1)
-                        #if dxl_getdata_result != True:
-                        #  print("[ID:%03d] groupBulkReadMove getdata failed" % DXL_ID)
+                        if dxl_getdata_result != True:
+                         print("[ID:%03d] groupBulkReadMove getdata failed" % DXL_ID)
                         dxl_present_condition_xm430.append(groupSyncReadMove_XM430.getData(DXL_ID, 122, 1))
                     else:
                         dxl_getdata_result = groupSyncRead_XL320.isAvailable(DXL_ID, XL320_ADDR_PRESENT_POSITION, XL320_LEN_PRESENT_POSITION)
-                        #if dxl_getdata_result != True:
-                        #  print("[ID:%03d] groupBulkRead getdata failed" % DXL_ID)
+                        if dxl_getdata_result != True:
+                         print("[ID:%03d] groupBulkRead getdata failed" % DXL_ID)
                         sudut = groupSyncRead_XL320.getData(DXL_ID, XL320_ADDR_PRESENT_POSITION, XL320_LEN_PRESENT_POSITION)
                         dxl_present_position_xl320.append (self.konversi(sudut,0,1023,0,300))
 
@@ -898,20 +945,124 @@ class APP(ctk.CTk):
                 if all(abs(i) <= THRESHOLD_XL320 for i in hasil_XL320) is True and all(abs(i) <= THRESHOLD_XM430 for i in hasil_XM430) is True or timeout>1:
                     break
                 
-                ###CHECK SERVO YANG BELUM SELESAI
-            #   for i,nilai in enumerate(hasil_XL320):
-            #      if abs(nilai)>=THRESHOLD_XL320:
-            #         print("ID :",i-0)
-                #for i,nilai in enumerate(hasil_XM430):
-                #   if abs(nilai)>=THRESHOLD_XM430:
-                #      print("ID :",i+13)
-                #pub.publish(urutan_gerak)
-                # rospy.sleep(0.01)
+    def gerak_by_motion_v6(self, NAMA_FILE, THRESHOLD_XL320=10, THRESHOLD_XM430=5, FILE2=None):
+        self.bacaFile_v3(NAMA_FILE)
+        print(NAMA_FILE)
+
+        for i in range(len(MOTION_DXL)):
+            finish_head = finish_hands = finish_feet = 0
+            timeout_head = timeout_hands = timeout_feet = 0
+            i = int(i)
+            
+            DXL_IDS = self.getIndexByNotElement(MOTION_DXL[i], "-1")
+            DXL_DEGREE = self.getNotValue(MOTION_DXL[i], "-1")
+            DXL_DEGREE_XL320, DXL_DEGREE_XM430 = self.getNotValue_v2(MOTION_DXL[i], "-1")
+            
+            print("MOTION :", NAMA_FILE, "STEP :", i)
+
+            for ids, DXL_ID in enumerate(DXL_IDS):
+                if DXL_ID >= 13:
+                    goal_pos = int(map(float(DXL_DEGREE[ids]), 0, 360, 0, 4096))
+                    goal_time = int(MOTION_TIME_XM430[i][DXL_ID - 13])
+                    Sync_Param = [
+                        DXL_LOBYTE(DXL_LOWORD(int(goal_time))), 
+                        DXL_HIBYTE(DXL_LOWORD(int(goal_time))),
+                        DXL_LOBYTE(DXL_HIWORD(int(goal_time))), 
+                        DXL_HIBYTE(DXL_HIWORD(int(goal_time))),
+                        DXL_LOBYTE(DXL_LOWORD(int(goal_pos))), 
+                        DXL_HIBYTE(DXL_LOWORD(int(goal_pos))),
+                        DXL_LOBYTE(DXL_HIWORD(int(goal_pos))), 
+                        DXL_HIBYTE(DXL_HIWORD(int(goal_pos)))
+                    ]
+                    dxl_addparam_result = groupSyncWrite_XM430.changeParam(DXL_ID, Sync_Param)
+                    if not dxl_addparam_result:
+                        print("[ID:%03d] groupBulkWrite XM TIME addparam failed" % DXL_ID)
+                else:
+                    goal_pos = int(map(float(DXL_DEGREE[ids]), 0, 300, 0, 1023))
+                    goal_time = int(MOTION_TIME_XL320[i][DXL_ID])
+                    Sync_Param = [
+                        DXL_LOBYTE(DXL_LOWORD(int(goal_pos))), 
+                        DXL_HIBYTE(DXL_LOWORD(int(goal_pos))),
+                        DXL_LOBYTE(DXL_LOWORD(int(goal_time))), 
+                        DXL_HIBYTE(DXL_LOWORD(int(goal_time)))
+                    ]
+                    dxl_addparam_result = groupSyncWrite_XL320.changeParam(DXL_ID, Sync_Param)
+                    if not dxl_addparam_result:
+                        print("[ID:%03d] groupBulkWrite XL TIME addparam failed" % DXL_ID)
+
+            dxl_comm_result = groupSyncWrite_XM430.txPacket()
+            if dxl_comm_result != COMM_SUCCESS:
+                print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
+            dxl_comm_result = groupSyncWrite_XL320.txPacket()
+            if dxl_comm_result != COMM_SUCCESS:
+                print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
+
+
+
+            while True:
+                if key.is_pressed(' '):
+                    print("selesai")
+                    break
+
+                try:
+                    dxl_present_position_xm430 = []
+                    dxl_present_position_xl320 = []
+                    dxl_present_condition_xm430 = []
+                    dxl_present_condition_xl320 = []
+
+                    groupSyncReadMove_XL320.txRxPacket()
+                    groupSyncReadMove_XM430.txRxPacket()
+                    groupSyncRead_XM430.txRxPacket()
+                    groupSyncRead_XL320.txRxPacket()
+
+                    for DXL_ID in DXL_IDS:
+                        if DXL_ID >= 13:
+                            sudut = groupSyncRead_XM430.getData(DXL_ID, XM430_ADDR_PRESENT_POSITION, XM430_LEN_PRESENT_POSITION)
+                            dxl_present_position_xm430.append(map(sudut, 0, 4095, 0, 360))
+                            dxl_present_condition_xm430.append(groupSyncReadMove_XM430.getData(DXL_ID, 122, 1))
+                        else:
+                            sudut = groupSyncRead_XL320.getData(DXL_ID, XL320_ADDR_PRESENT_POSITION, XL320_LEN_PRESENT_POSITION)
+                            dxl_present_position_xl320.append(map(sudut, 0, 1023, 0, 300))
+                            dxl_present_condition_xl320.append(groupSyncReadMove_XL320.getData(DXL_ID, 49, 1))
+
+                    dxl_present_position_xl320 = np.asarray(dxl_present_position_xl320)
+                    dxl_present_position_xm430 = np.asarray(dxl_present_position_xm430)
+                    DXL_DEGREE_XL320 = np.asarray(DXL_DEGREE_XL320)
+                    DXL_DEGREE_XM430 = np.asarray(DXL_DEGREE_XM430)
+
+                    hasil_XL320 = dxl_present_position_xl320 - DXL_DEGREE_XL320
+                    hasil_XM430 = dxl_present_position_xm430 - DXL_DEGREE_XM430
+
+                    combined_condition = dxl_present_condition_xl320 + dxl_present_condition_xm430
+                    if all(j == 0 for j in combined_condition):
+                        timeout_head += 1
+                        timeout_hands += 1
+                        timeout_feet += 1
+
+                    if not finish_head:
+                        if all(abs(i) <= THRESHOLD_XL320 for i in hasil_XL320[0:3]) or timeout_head > 1:
+                            finish_head = 1
+
+                    if not finish_hands:
+                        hand_xl320_ok = all(abs(i) <= THRESHOLD_XL320 for i in hasil_XL320[3:13])
+                        hand_xm430_ok = all(abs(i) <= THRESHOLD_XM430 for i in hasil_XM430[0:2])
+                        if hand_xl320_ok and hand_xm430_ok or timeout_hands > 1:
+                            finish_hands = 1
+
+                    if not finish_feet:
+                        if all(abs(i) <= THRESHOLD_XM430 for i in hasil_XM430[2:]) or timeout_feet > 1:
+                            finish_feet = 1
+
+                    if finish_head and finish_hands and finish_feet:
+                        break
+                except Exception as e:
+                    print(f"Error: {str(e)}")
+
 
 
 
 if __name__ == "__main__":
-    inisialisasi_port()
+    # inisialisasi_port()
     print('anjay')
     app = APP() 
     app.mainloop()

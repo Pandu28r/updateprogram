@@ -492,7 +492,7 @@ def toggle_servo(servo_id, enable, name, step):
                 update_csv_with_servo_position(name, step, servo_loop)
 
 def main():
-    initialize_dynamixels()
+    # initialize_dynamixels()
     global app
     app = ctk.CTk()
     app.geometry("550x550")

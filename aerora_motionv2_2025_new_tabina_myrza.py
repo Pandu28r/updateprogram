@@ -18,7 +18,7 @@ LEN_PRO_PRESENT_POSITION = 2
 LEN_XM430_PRESENT_POSITION = 4
 PROTOCOL_VERSION = 2.0
 BAUDRATE = 1000000
-DEVICENAME = 'COM7'
+DEVICENAME = 'COM6'
 TORQUE_ENABLE = 1
 TORQUE_DISABLE = 0
 DXL_MOVING_STATUS_THRESHOLD = 20
@@ -31,6 +31,7 @@ DXL_XL320 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 DXL_LenganAtas = [13, 14]
 DXL_Pinggang = [15, 16]
 DXL_XM430 = [17, 18, 19, 20, 21, 22, 23, 24, 25, 26]
+DXL_ALL = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26]
 dataMotion = []
 urutan_gerak=0
 
@@ -92,6 +93,21 @@ def initialize_dynamixels():
             print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
         elif dxl_error != 0:
             print("%s" % packetHandler.getRxPacketError(dxl_error))
+    for id in DXL_ALL:
+        if id < 13:
+            dxl_addparam_result = groupSyncRead_XL320.addParam(id)
+            if dxl_addparam_result != True:
+                print("[ID:%03d] groupSyncRead_XL320 addparam failed" % id)
+            dxl_addparam_result = groupSyncReadMove_XL320.addParam(id)
+            if dxl_addparam_result != True:
+                print("[ID:%03d] groupSyncRead_XL320 addparam failed" % id)
+        else:
+            dxl_addparam_result = groupSyncRead_XM430.addParam(id)
+            if dxl_addparam_result != True:
+                print("[ID:%03d] groupSyncRead_XL320 addparam failed" % id)
+            dxl_addparam_result = groupSyncReadMove_XM430.addParam(id)
+            if dxl_addparam_result != True:
+                print("[ID:%03d] groupSyncRead_XL320 addparam failed" % id)
 
 def enable_dynamixels():
     for DXL1_ID in DXL_XL320 +  DXL_LenganAtas + DXL_Pinggang + DXL_XM430:
@@ -122,7 +138,9 @@ def disable_dynamixels():
 def bacaFile_v3(FILE_NAME):
     global MOTION_TIME_XM430, MOTION_TIME_XL320
     global MOTION_HEAD, MOTION_HAND, MOTION_FEET, MOTION_DXL, MOTION_DXL_XL320, MOTION_DXL_XM430
-    
+    path = os.getcwd()
+    os.chdir(f"{path}/motion_baru")
+
     file = open(FILE_NAME)
     csvreader = csv.reader(file)
     header = next(csvreader)
@@ -136,142 +154,24 @@ def bacaFile_v3(FILE_NAME):
     MOTION_DXL_XL320 = []
     MOTION_DXL_XM430 = []
     for row in csvreader:
-        MOTION_TIME_XL320.append([row[i] for i in range(1, 13)])
-        MOTION_TIME_XM430.append([row[i] for i in range(13, 27)])
-        MOTION_DXL.append(row[27:])
+        MOTION_TIME_XL320.append([row[i] for i in range(1, 14)])
+        MOTION_TIME_XM430.append([row[i] for i in range(14, 28)])
+        MOTION_DXL.append(row[28:])
 
-        MOTION_DXL_XL320.append(row[:15])
-        MOTION_DXL_XM430.append(row[15:30])
+        MOTION_DXL_XL320.append(row[28:41])
+        MOTION_DXL_XM430.append(row[41:54])
 
-        MOTION_HEAD.append(row[3:6])
-        MOTION_HAND.append(row[6:18])
-        MOTION_FEET.append(row[18:30])
-    
+        MOTION_HEAD.append(row[28:31])
+        MOTION_HAND.append(row[31:43])
+        MOTION_FEET.append(row[43:])
+    os.chdir(path)
     file.close()
 
-def gerak_by_motion_v6(NAMA_FILE, THRESHOLD_XL320=10, THRESHOLD_XM430=10, FILE2=None):
-    global urutan_gerak
-
-#    pub = rospy.Publisher('master_tp', Int32, queue_size=100)
-#    rospy.Subscriber('bluetooth_data', Int32, bluetooth_callback)
-
+def play_perstep_v6(NAMA_FILE):
+    NAMA_FILE = f"{NAMA_FILE}.csv"
     bacaFile_v3(NAMA_FILE)
-    print(NAMA_FILE)
-
-    for i in range(len(MOTION_DXL)):
-        finish_head = finish_hands = finish_feet = 0
-        timeout_head = timeout_hands = timeout_feet = 0
-        i = int(i)
-        
-        DXL_IDS = getIndexByNotElement(MOTION_DXL[i], "-1")
-        DXL_DEGREE = getNotValue(MOTION_DXL[i], "-1")
-        DXL_DEGREE_XL320, DXL_DEGREE_XM430 = getNotValue_v2(MOTION_DXL[i], "-1")
-        
-#        print("MOTION :", NAMA_FILE, "STEP :", i)
-
-        for ids, DXL_ID in enumerate(DXL_IDS):
-            if DXL_ID >= 13:
-                goal_pos = int(map(float(DXL_DEGREE[ids]), 0, 360, 0, 4096))
-                goal_time = int(MOTION_TIME_XM430[i][DXL_ID - 13])
-                Sync_Param = [
-                    DXL_LOBYTE(DXL_LOWORD(int(goal_time))), 
-                    DXL_HIBYTE(DXL_LOWORD(int(goal_time))),
-                    DXL_LOBYTE(DXL_HIWORD(int(goal_time))), 
-                    DXL_HIBYTE(DXL_HIWORD(int(goal_time))),
-                    DXL_LOBYTE(DXL_LOWORD(int(goal_pos))), 
-                    DXL_HIBYTE(DXL_LOWORD(int(goal_pos))),
-                    DXL_LOBYTE(DXL_HIWORD(int(goal_pos))), 
-                    DXL_HIBYTE(DXL_HIWORD(int(goal_pos)))
-                ]
-                dxl_addparam_result = groupSyncWrite_XM430.changeParam(DXL_ID, Sync_Param)
-                if not dxl_addparam_result:
-                    print("[ID:%03d] groupBulkWrite XM TIME addparam failed" % DXL_ID)
-            else:
-                goal_pos = int(map(float(DXL_DEGREE[ids]), 0, 300, 0, 1023))
-                goal_time = int(MOTION_TIME_XL320[i][DXL_ID])
-                Sync_Param = [
-                    DXL_LOBYTE(DXL_LOWORD(int(goal_pos))), 
-                    DXL_HIBYTE(DXL_LOWORD(int(goal_pos))),
-                    DXL_LOBYTE(DXL_LOWORD(int(goal_time))), 
-                    DXL_HIBYTE(DXL_LOWORD(int(goal_time)))
-                ]
-                dxl_addparam_result = groupSyncWrite_XL320.changeParam(DXL_ID, Sync_Param)
-                if not dxl_addparam_result:
-                    print("[ID:%03d] groupBulkWrite XL TIME addparam failed" % DXL_ID)
-
-        dxl_comm_result = groupSyncWrite_XM430.txPacket()
-        if dxl_comm_result != COMM_SUCCESS:
-            print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
-        dxl_comm_result = groupSyncWrite_XL320.txPacket()
-        if dxl_comm_result != COMM_SUCCESS:
-            print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
-
-        urutan_gerak += 1
-
-        while True:
-            # if pause_gerakan:
-            #     rospy.sleep(0.01)
-            #     continue
-
-            try:
-                dxl_present_position_xm430 = []
-                dxl_present_position_xl320 = []
-                dxl_present_condition_xm430 = []
-                dxl_present_condition_xl320 = []
-
-                groupSyncReadMove_XL320.txRxPacket()
-                groupSyncReadMove_XM430.txRxPacket()
-                groupSyncRead_XM430.txRxPacket()
-                groupSyncRead_XL320.txRxPacket()
-
-                for DXL_ID in DXL_IDS:
-                    if DXL_ID >= 13:
-                        sudut = groupSyncRead_XM430.getData(DXL_ID, 132, 4)
-                        dxl_present_position_xm430.append(map(sudut, 0, 4095, 0, 360))
-                        dxl_present_condition_xm430.append(groupSyncReadMove_XM430.getData(DXL_ID, 122, 1))
-                    else:
-                        sudut = groupSyncRead_XL320.getData(DXL_ID, 37, 2)
-                        dxl_present_position_xl320.append(map(sudut, 0, 1023, 0, 300))
-                        dxl_present_condition_xl320.append(groupSyncReadMove_XL320.getData(DXL_ID, 49, 1))
-
-                dxl_present_position_xl320 = np.asarray(dxl_present_position_xl320)
-                dxl_present_position_xm430 = np.asarray(dxl_present_position_xm430)
-                DXL_DEGREE_XL320 = np.asarray(DXL_DEGREE_XL320)
-                DXL_DEGREE_XM430 = np.asarray(DXL_DEGREE_XM430)
-
-                hasil_XL320 = dxl_present_position_xl320 - DXL_DEGREE_XL320
-                hasil_XM430 = dxl_present_position_xm430 - DXL_DEGREE_XM430
-
-                combined_condition = dxl_present_condition_xl320 + dxl_present_condition_xm430
-                if all(j == 0 for j in combined_condition):
-                    timeout_head += 1
-                    timeout_hands += 1
-                    timeout_feet += 1
-
-                if not finish_head:
-                    if all(abs(i) <= THRESHOLD_XL320 for i in hasil_XL320[0:3]) or timeout_head > 1:
-                        finish_head = 1
-
-                if not finish_hands:
-                    hand_xl320_ok = all(abs(i) <= THRESHOLD_XL320 for i in hasil_XL320[3:13])
-                    hand_xm430_ok = all(abs(i) <= THRESHOLD_XM430 for i in hasil_XM430[0:2])
-                    if hand_xl320_ok and hand_xm430_ok or timeout_hands > 1:
-                        finish_hands = 1
-
-                if not finish_feet:
-                    if all(abs(i) <= THRESHOLD_XM430 for i in hasil_XM430[2:]) or timeout_feet > 1:
-                        finish_feet = 1
-
-                if finish_head and finish_hands and finish_feet:
-                    # pub.publish(urutan_gerak)
-                    break
-                # if handler.slave >= urutan_gerak:
-                #     break
-            except Exception as e:
-                print(f"Error: {str(e)}")
-            # rospy.sleep(0.001)
-        urutan_gerak += 1
-#        pub.publish(urutan_gerak)
+    print("anjay")
+    play_motion_gui_v6()
 
 
 def set_servo_velocity(servo_id, velocity):
@@ -305,7 +205,142 @@ def set_servo_velocity(servo_id, velocity):
 #             elif dxl_error != 0:
 #                 print("%s" % packetHandler.getRxPacketError(dxl_error), "on ID", DXL1_ID)
 
+def play_motion_gui_v6():
+    def display_step_v6(index):
+        print(f"Step {index+1}/{len(MOTION_DXL)}")
+        gerak_by_motion_v6_perstep(i=index)
+        label_step.configure(text=f"Step {index+1}/{len(MOTION_DXL)}")
+    
+    def next_step_v6():
+        nonlocal index
+        if index < len(MOTION_DXL) - 1:
+            index += 1
+            gerak_by_motion_v6_perstep(index)
+            label_step.configure(text=f"Step {index+1}/{len(MOTION_DXL)}")
 
+    def previous_step_v6():
+        nonlocal index
+        if index > 0:
+            index -= 1
+            gerak_by_motion_v6_perstep(index)
+            label_step.configure(text=f"Step {index+1}/{len(MOTION_DXL)}")
+    index = 0
+
+    def gerak_by_motion_v6_perstep(i, THRESHOLD_XL320=10, THRESHOLD_XM430=5, FILE2=None):
+        finish_head = finish_hands = finish_feet = 0
+        timeout_head = timeout_hands = timeout_feet = 0
+        i = int(i)
+        
+        DXL_IDS = getIndexByNotElement(MOTION_DXL[i], "-1")
+        DXL_DEGREE = getNotValue(MOTION_DXL[i], "-1")
+        DXL_DEGREE_XL320, DXL_DEGREE_XM430 = getNotValue_v2(MOTION_DXL[i], "-1")
+        print("STEP :", i)
+        groupSyncWrite_XL320.clearParam()
+        groupSyncWrite_XM430.clearParam()
+        for ids, DXL_ID in enumerate(DXL_IDS):
+            if DXL_ID >= 13:
+                goal_pos = int(konversi(float(DXL_DEGREE[ids]), 0, 360, 0, 4096))
+                goal_time = int(MOTION_TIME_XM430[i][DXL_ID - 13])
+                Sync_Param = [
+                    DXL_LOBYTE(DXL_LOWORD(int(goal_time))), 
+                    DXL_HIBYTE(DXL_LOWORD(int(goal_time))),
+                    DXL_LOBYTE(DXL_HIWORD(int(goal_time))), 
+                    DXL_HIBYTE(DXL_HIWORD(int(goal_time))),
+                    DXL_LOBYTE(DXL_LOWORD(int(goal_pos))), 
+                    DXL_HIBYTE(DXL_LOWORD(int(goal_pos))),
+                    DXL_LOBYTE(DXL_HIWORD(int(goal_pos))), 
+                    DXL_HIBYTE(DXL_HIWORD(int(goal_pos)))
+                ]
+                dxl_addparam_result = groupSyncWrite_XM430.addParam(DXL_ID, Sync_Param)
+                if not dxl_addparam_result:
+                    print("[ID:%03d] groupBulkWrite XM TIME addparam failed" % DXL_ID)
+            else:
+                goal_pos = int(konversi(float(DXL_DEGREE[ids]), 0, 300, 0, 1023))
+                goal_time = int(MOTION_TIME_XL320[i][DXL_ID])
+                Sync_Param = [
+                    DXL_LOBYTE(DXL_LOWORD(int(goal_pos))), 
+                    DXL_HIBYTE(DXL_LOWORD(int(goal_pos))),
+                    DXL_LOBYTE(DXL_LOWORD(int(goal_time))), 
+                    DXL_HIBYTE(DXL_LOWORD(int(goal_time)))
+                ]
+                dxl_addparam_result = groupSyncWrite_XL320.addParam(DXL_ID, Sync_Param)
+                if not dxl_addparam_result:
+                    print("[ID:%03d] groupBulkWrite XL TIME addparam failed" % DXL_ID)
+        dxl_comm_result = groupSyncWrite_XM430.txPacket()
+        if dxl_comm_result != COMM_SUCCESS:
+            print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
+        dxl_comm_result = groupSyncWrite_XL320.txPacket()
+        if dxl_comm_result != COMM_SUCCESS:
+            print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
+
+        while True:
+
+            try:
+                dxl_present_position_xm430 = []
+                dxl_present_position_xl320 = []
+                dxl_present_condition_xm430 = []
+                dxl_present_condition_xl320 = []
+
+                groupSyncReadMove_XL320.txRxPacket()
+                groupSyncReadMove_XM430.txRxPacket()
+                groupSyncRead_XM430.txRxPacket()
+                groupSyncRead_XL320.txRxPacket()
+
+                for DXL_ID in DXL_IDS:
+                    if DXL_ID >= 13:
+                        sudut = groupSyncRead_XM430.getData(DXL_ID, XM430_PRESENT_POSITION, 4)
+                        dxl_present_position_xm430.append(konversi(sudut, 0, 4095, 0, 360))
+                        dxl_present_condition_xm430.append(groupSyncReadMove_XM430.getData(DXL_ID, 122, 1))
+                    else:
+                        sudut = groupSyncRead_XL320.getData(DXL_ID, XL320_PRESENT_POSITION, 4)
+                        dxl_present_position_xl320.append(konversi(sudut, 0, 1023, 0, 300))
+                        dxl_present_condition_xl320.append(groupSyncReadMove_XL320.getData(DXL_ID, 49, 1))
+
+                dxl_present_position_xl320 = np.asarray(dxl_present_position_xl320)
+                dxl_present_position_xm430 = np.asarray(dxl_present_position_xm430)
+                DXL_DEGREE_XL320 = np.asarray(DXL_DEGREE_XL320)
+                DXL_DEGREE_XM430 = np.asarray(DXL_DEGREE_XM430)
+                hasil_XL320 = dxl_present_position_xl320 - DXL_DEGREE_XL320
+                hasil_XM430 = dxl_present_position_xm430 - DXL_DEGREE_XM430
+                # print(dxl_present_position_xl320)
+                print(dxl_present_position_xm430)
+                combined_condition = dxl_present_condition_xl320 + dxl_present_condition_xm430
+                if all(j == 0 for j in combined_condition):
+                    timeout_head += 1
+                    timeout_hands += 1
+                    timeout_feet += 1
+
+                if not finish_head:
+                    if all(abs(i) <= THRESHOLD_XL320 for i in hasil_XL320[0:3]) or timeout_head > 1:
+                        finish_head = 1
+
+                if not finish_hands:
+                    hand_xl320_ok = all(abs(i) <= THRESHOLD_XL320 for i in hasil_XL320[3:13])
+                    hand_xm430_ok = all(abs(i) <= THRESHOLD_XM430 for i in hasil_XM430[0:2])
+                    if hand_xl320_ok and hand_xm430_ok or timeout_hands > 1:
+                        finish_hands = 1
+
+                if not finish_feet:
+                    if all(abs(i) <= THRESHOLD_XM430 for i in hasil_XM430[2:]) or timeout_feet > 1:
+                        finish_feet = 1
+
+                if finish_head and finish_hands and finish_feet:
+                    break
+            except Exception as e:
+                print(f"Error: {str(e)}")
+
+    play_window = ctk.CTkToplevel(app)
+    play_window.geometry("300x200")
+    play_window.title("Melihat Motion")
+    frame_play = ctk.CTkFrame(play_window)
+    frame_play.pack(pady=20, padx=20, fill="both", expand=True)
+    label_step = ctk.CTkLabel(frame_play, text="Step 1")
+    label_step.pack(pady=10)
+    button_previous = ctk.CTkButton(frame_play, text="Previous Step", command=previous_step_v6)
+    button_previous.pack(pady=10)
+    button_next = ctk.CTkButton(frame_play, text="Next Step", command=next_step_v6)
+    button_next.pack(pady=10)
+    display_step_v6(index)
 
 def record_motion_gui(name, servo_id):
     motion_data = []
@@ -492,7 +527,7 @@ def toggle_servo(servo_id, enable, name, step):
                 update_csv_with_servo_position(name, step, servo_loop)
 
 def main():
-    # initialize_dynamixels()
+    initialize_dynamixels()
     global app
     app = ctk.CTk()
     app.geometry("550x550")
@@ -558,6 +593,28 @@ def main():
         else:
             print("File motion tidak ditemukan. Pastikan nama file sesuai dan berada di folder 'motion_baru'.")
 
+    def view_motion_lebih_baru():
+        name = entry_name.get()
+        path = f'motion_baru/{name}.csv'
+        if os.path.exists(path):
+            try:
+                df = pd.read_csv(path)
+                dxl_columns = [f'DXL#{i}' for i in range(27)]
+                cek_columns_v6 =  [f'T_XL320#{i}' for i in range(13)] + [f'T_XM430#{i}' for i in range(13,27)] + [f'DXL#{i}' for i in range(27)]
+                time_columns_v6 = [f'T_XL320#{i}' for i in range(13)] + [f'T_XM430#{i}' for i in range(13,27)]
+                cek_columns =  ['T_XL320', 'T_XM430'] + [f'DXL#{i}' for i in range(27)]
+                time_columns =  ['T_XL320', 'T_XM430']
+                if all(col in df.columns for col in cek_columns_v6):
+                    print("anjay")
+                    play_perstep_v6(name)
+                elif all(col in df.columns for col in cek_columns):
+                    print("ini file v4/5")
+                else:
+                    print("File tidak memiliki semua kolom yang diperlukan (DXL#0 hingga DXL#26).")
+            except Exception as e:
+                print(f"Terjadi kesalahan saat memuat file: {e}")
+        else:
+            print("File motion tidak ditemukan. Pastikan nama file sesuai dan berada di folder 'motion_baru'.")
 
     def view_motion_lama():
         name = entry_name.get()
@@ -706,6 +763,7 @@ def main():
                     elif dxl_error != 0:
                         print("%s" % packetHandler.getRxPacketError(dxl_error))
 
+
         def servo_kepala():
             if switch_var_kepala.get() == "on":
                 for DXL1_ID in kepala:
@@ -721,6 +779,7 @@ def main():
                         print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
                     elif dxl_error != 0:
                         print("%s" % packetHandler.getRxPacketError(dxl_error))
+
 
         switch_var_badan = ctk.StringVar(value="on")
         switch_var_kaki = ctk.StringVar(value = "on")
@@ -774,9 +833,9 @@ def main():
     record_badan_button.pack(pady=10)
     view_motion_button = ctk.CTkButton(frame, text="Lihat Motion", command=view_motion_baru)
     view_motion_button.pack(pady=10)
-    view_motion_lama = ctk.CTkButton(frame, text="Lihat Motion Lama", command=view_motion_lama)
-    view_motion_lama.pack(pady=10)
-    view_motion_v6 = ctk.CTkButton(frame, text="Lihat Motion v6", command=view_motion_baru)
+    view_motion_lamaa = ctk.CTkButton(frame, text="Lihat Motion Lama", command=view_motion_lebih_baru)
+    view_motion_lamaa.pack(pady=10)
+    view_motion_v6 = ctk.CTkButton(frame, text="Lihat Motion v6", command=view_motion_lebih_baru)
     view_motion_v6.pack(pady=10)
     toggle_servo_button = ctk.CTkButton(frame, text="Toggle Servo", command=toggle_servo_state)
     toggle_servo_button.pack(pady=10)

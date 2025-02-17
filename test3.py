@@ -1,30 +1,3 @@
-import customtkinter as ctk
-
-# Mengatur tema dan tampilan
-ctk.set_appearance_mode("Dark")  # "Light" atau "Dark"
-ctk.set_default_color_theme("blue")  # "blue", "green", "dark-blue", dll.
-
-# Membuat jendela utama
-root = ctk.CTk()
-
-# Mengatur judul dan ukuran jendela
-root.title("CustomTkinter App")
-root.geometry("400x300")
-
-# Membuat label
-label = ctk.CTkLabel(root, text="Hello, CustomTkinter!", font=("Arial", 20))
-label.pack(pady=20)
-
-# Fungsi untuk menambahkan tombol baru
-def button_click():
-    label.config(text="Button Clicked!")
-    # Membuat tombol baru setelah tombol pertama diklik
-    new_button = ctk.CTkButton(root, text="New Button", command=button_click)
-    new_button.pack(pady=10)
-
-# Membuat tombol pertama
-button = ctk.CTkButton(root, text="Click Me", command=button_click)
-button.pack(pady=10)
-
-# Menjalankan aplikasi
-root.mainloop()
+DXL_IDS = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,18,19,20,21,22,23,24,25,26]
+for ids, DXL_ID in enumerate(DXL_IDS):
+    print(DXL_ID)

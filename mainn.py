@@ -44,6 +44,7 @@ XM430_LEN_COMBINED                  = 8
 DXL_XL320 = [0,1,2,3,4,5,6,7,8,9,10,11,12]
 DXL_XM430 = [13,14,15,16,17,18,19,20,21,22,23,24,25,26]
 SERVOS = 0
+DXL_DEGREE = []
 
 def inisialisasi_port():
     global portHandler, packetHandler, groupSyncWrite_XL320, groupSyncWrite_XM430, groupSyncReadMove_XL320, groupSyncReadMove_XM430, groupSyncRead_XL320, groupSyncRead_XM430
@@ -154,6 +155,13 @@ class APP(ctk.CTk):
         self.tabKeempat.add("Per-Step new")
         self.tabKeempat.add("Play Motion")
 
+        self.tabKelima = ctk.CTkTabview(self.tabView.tab("REKAM MOTION"), fg_color="#3D3C40", height=275, width=330)
+        self.tabKelima.pack(padx=10,pady=10)
+
+        self.tabKelima.add("REKAM FULL")
+        self.tabKelima.add("REKAM BADAN")
+        self.tabKelima.add("REKAM ")
+
     # SWITCH VAR
         self.switch_var_semua = ctk.StringVar(value="off")
         self.switch_var_kepala = ctk.StringVar(value="off")
@@ -236,6 +244,9 @@ class APP(ctk.CTk):
         self.button_play_motion_v5.pack(pady=20)
         self.button_play_motion_v6 = ctk.CTkButton(self.tabKeempat.tab("Play Motion"), text="PLAY MOTION V6", command=self.play_motion_v6, fg_color=COLOR)
         self.button_play_motion_v6.pack(pady=20)
+
+
+        # REKAM MOTION
 
 
 
@@ -633,10 +644,10 @@ class APP(ctk.CTk):
                         self.time_data = df[time_columns_v6].values.tolist()
                         self.play_motion_gui()
                     elif view_play == 2:
-                        self.bacaFile_v3(path)
-                        self.play_motion_v6(name)
+                        self.bacaFile_v3(name)
+                        self.gerak_by_motion_v6(name)
                     elif view_play == 3:
-                        self.bacaFile_v3(path)
+                        self.bacaFile_v3(name)
                         self.index = 0
                         self.motion_v6(self.index,name)
                 elif all(col in df.columns for col in cek_columns):
@@ -650,7 +661,7 @@ class APP(ctk.CTk):
                         self.time_data = df[time_columns].values.tolist()
                         self.play_motion_gui()
                     elif view_play == 1:
-                        self.bacaFile(path)
+                        self.bacaFile(name)
                         self.gerak_by_motion_v4(name)
                 else:
                     print("Kolom pada file salah.")
@@ -674,6 +685,8 @@ class APP(ctk.CTk):
         print(step_time)
         print(self.type)
         print(f"Step {self.index+1}/{len(self.motion_data)}")
+        groupSyncWrite_XM430.clearParam()
+        groupSyncWrite_XL320.clearParam()
         if self.type == 'v6': 
             for DXL1_ID, position in enumerate(step_data):
                 if DXL1_ID < 13:
@@ -722,8 +735,6 @@ class APP(ctk.CTk):
         dxl_comm_result = groupSyncWrite_XM430.txPacket()
         if dxl_comm_result != COMM_SUCCESS:
             print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
-        groupSyncWrite_XM430.clearParam()
-        groupSyncWrite_XL320.clearParam()
         self.label_perstep.configure(text=f"Step {self.index+1}/{len(self.motion_data)}")
 
 
@@ -734,25 +745,11 @@ class APP(ctk.CTk):
                 self.index += 1
                 self.play_motion_gui()
     
-    def next_step_baru(self):
-        name = self.entry_name_lihat.get()
-        if self.switch_var_kondisi_perstep_baru.get() == 'on' and self.switch_var_kondisi_perstep.get() == 'off':
-            if self.index < len(self.motion_data) - 1:
-                self.index += 1
-                self.motion_v6(self.index, name)
-    
     def previous_step(self):
         if self.switch_var_kondisi_perstep.get() == 'on' and self.switch_var_kondisi_perstep_baru.get() == 'off':
             if self.index > 0:
                 self.index -= 1
                 self.play_motion_gui()
-
-    def previous_step_baru(self):
-        name = self.entry_name_lihat.get()
-        if self.switch_var_kondisi_perstep_baru.get() == 'on' and self.switch_var_kondisi_perstep.get() == 'off':
-            if self.index > 0:
-                self.index -= 1
-                self.motion_v6(self.index, name)
 
     def kondisi_perstep(self):
         if self.switch_var_kondisi_perstep.get() == 'on' and self.switch_var_kondisi_perstep_baru.get() == 'off':
@@ -793,6 +790,9 @@ class APP(ctk.CTk):
 
     def bacaFile(self, FILE_NAME):
         global MOTION_TIME_XM430,MOTION_TIME_XL320,MOTION_DXL_XL320,MOTION_DXL_XM430,MOTION_DXL
+        path = os.getcwd()
+        os.chdir(f"{path}/motion_baru")
+        FILE_NAME = f"{FILE_NAME}.csv"
         file = open(FILE_NAME)
         csvreader = csv.reader(file)
         header = next(csvreader)
@@ -810,13 +810,16 @@ class APP(ctk.CTk):
             MOTION_DXL_XM430.append(row[18:30])
         
         file.close()
+        os.chdir(path)
         return MOTION_DXL
     
     
     def bacaFile_v3(self, FILE_NAME):
         global MOTION_TIME_XM430, MOTION_TIME_XL320
         global MOTION_HEAD, MOTION_HAND, MOTION_FEET, MOTION_DXL, MOTION_DXL_XL320, MOTION_DXL_XM430
-        
+        path = os.getcwd()
+        os.chdir(f"{path}/motion_baru")
+        FILE_NAME = f"{FILE_NAME}.csv"
         file = open(FILE_NAME)
         csvreader = csv.reader(file)
         header = next(csvreader)
@@ -840,7 +843,7 @@ class APP(ctk.CTk):
             MOTION_HEAD.append(row[28:31])
             MOTION_HAND.append(row[31:43])
             MOTION_FEET.append(row[43:])
-        
+        os.chdir(path)
         file.close()
     
     def getIndexByNotElement(self,array,element):
@@ -888,9 +891,6 @@ class APP(ctk.CTk):
             DXL_DEGREE_XL320, DXL_DEGREE_XM430 = self.getNotValue_v2(MOTION_DXL[i],"-1")
             print( "MOTION : ",NAMA_FILE," STEP : ",i)
             timeout=0
-            print(DXL_DEGREE)
-            print(DXL_IDS)
-            print(MOTION_TIME_XM430)
             
             for ids,DXL_ID in enumerate(DXL_IDS):
                 if DXL_ID in DXL_XM430:
@@ -997,12 +997,12 @@ class APP(ctk.CTk):
         DXL_IDS = self.getIndexByNotElement(MOTION_DXL[i], "-1")
         DXL_DEGREE = self.getNotValue(MOTION_DXL[i], "-1")
         DXL_DEGREE_XL320, DXL_DEGREE_XM430 = self.getNotValue_v2(MOTION_DXL[i], "-1")
-        
         print("MOTION :", NAMA_FILE, "STEP :", i)
-
+        groupSyncWrite_XL320.clearParam()
+        groupSyncWrite_XM430.clearParam()
         for ids, DXL_ID in enumerate(DXL_IDS):
             if DXL_ID >= 13:
-                goal_pos = int(map(float(DXL_DEGREE[ids]), 0, 360, 0, 4096))
+                goal_pos = int(self.konversi(float(DXL_DEGREE[ids]), 0, 360, 0, 4096))
                 goal_time = int(MOTION_TIME_XM430[i][DXL_ID - 13])
                 Sync_Param = [
                     DXL_LOBYTE(DXL_LOWORD(int(goal_time))), 
@@ -1014,11 +1014,11 @@ class APP(ctk.CTk):
                     DXL_LOBYTE(DXL_HIWORD(int(goal_pos))), 
                     DXL_HIBYTE(DXL_HIWORD(int(goal_pos)))
                 ]
-                dxl_addparam_result = groupSyncWrite_XM430.changeParam(DXL_ID, Sync_Param)
+                dxl_addparam_result = groupSyncWrite_XM430.addParam(DXL_ID, Sync_Param)
                 if not dxl_addparam_result:
                     print("[ID:%03d] groupBulkWrite XM TIME addparam failed" % DXL_ID)
             else:
-                goal_pos = int(map(float(DXL_DEGREE[ids]), 0, 300, 0, 1023))
+                goal_pos = int(self.konversi(float(DXL_DEGREE[ids]), 0, 300, 0, 1023))
                 goal_time = int(MOTION_TIME_XL320[i][DXL_ID])
                 Sync_Param = [
                     DXL_LOBYTE(DXL_LOWORD(int(goal_pos))), 
@@ -1026,10 +1026,9 @@ class APP(ctk.CTk):
                     DXL_LOBYTE(DXL_LOWORD(int(goal_time))), 
                     DXL_HIBYTE(DXL_LOWORD(int(goal_time)))
                 ]
-                dxl_addparam_result = groupSyncWrite_XL320.changeParam(DXL_ID, Sync_Param)
+                dxl_addparam_result = groupSyncWrite_XL320.addParam(DXL_ID, Sync_Param)
                 if not dxl_addparam_result:
                     print("[ID:%03d] groupBulkWrite XL TIME addparam failed" % DXL_ID)
-
         dxl_comm_result = groupSyncWrite_XM430.txPacket()
         if dxl_comm_result != COMM_SUCCESS:
             print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
@@ -1037,11 +1036,12 @@ class APP(ctk.CTk):
         if dxl_comm_result != COMM_SUCCESS:
             print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
 
-        self.label_perstep_new.configure(text=f"Step {self.index+1}/{len(self.motion_data)}")
+        self.label_perstep_new.configure(text=f"Step {self.index+1  }/{len(MOTION_DXL)}")
 
         while True:
             if key.is_pressed(' '):
                 print("selesai")
+
                 break
 
             try:
@@ -1058,11 +1058,11 @@ class APP(ctk.CTk):
                 for DXL_ID in DXL_IDS:
                     if DXL_ID >= 13:
                         sudut = groupSyncRead_XM430.getData(DXL_ID, XM430_ADDR_PRESENT_POSITION, XM430_LEN_PRESENT_POSITION)
-                        dxl_present_position_xm430.append(map(sudut, 0, 4095, 0, 360))
+                        dxl_present_position_xm430.append(self.konversi(sudut, 0, 4095, 0, 360))
                         dxl_present_condition_xm430.append(groupSyncReadMove_XM430.getData(DXL_ID, 122, 1))
                     else:
                         sudut = groupSyncRead_XL320.getData(DXL_ID, XL320_ADDR_PRESENT_POSITION, XL320_LEN_PRESENT_POSITION)
-                        dxl_present_position_xl320.append(map(sudut, 0, 1023, 0, 300))
+                        dxl_present_position_xl320.append(self.konversi(sudut, 0, 1023, 0, 300))
                         dxl_present_condition_xl320.append(groupSyncReadMove_XL320.getData(DXL_ID, 49, 1))
 
                 dxl_present_position_xl320 = np.asarray(dxl_present_position_xl320)
@@ -1098,10 +1098,25 @@ class APP(ctk.CTk):
             except Exception as e:
                 print(f"Error: {str(e)}")
 
+    def next_step_baru(self):
+        name = self.entry_name_lihat.get()
+        if self.switch_var_kondisi_perstep_baru.get() == 'on' and self.switch_var_kondisi_perstep.get() == 'off':
+            print(len(MOTION_DXL))
+            if self.index < len(MOTION_DXL) - 1:
+                self.index += 1
+                self.motion_v6(self.index, name)
+
+    def previous_step_baru(self):
+        name = self.entry_name_lihat.get()
+        if self.switch_var_kondisi_perstep_baru.get() == 'on' and self.switch_var_kondisi_perstep.get() == 'off':
+            if self.index > 0:
+                self.index -= 1
+                self.motion_v6(self.index, name)
+
 
 
 
 if __name__ == "__main__":
-    # inisialisasi_port()
+    inisialisasi_port()
     app = APP() 
     app.mainloop()

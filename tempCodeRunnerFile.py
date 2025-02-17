@@ -1,1 +1,1 @@
-  # inisialisasi_port()
+def main

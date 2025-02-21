@@ -86,7 +86,11 @@ def initialize_dynamixels():
     portHandler.openPort()
     portHandler.setBaudRate(BAUDRATE)
     groupSyncWrite_XL320.clearParam()
-    groupSyncWrite_XL320.clearParam()
+    groupSyncWrite_XM430.clearParam() 
+    groupSyncReadMove_XL320.clearParam() 
+    groupSyncReadMove_XM430.clearParam()
+    groupSyncRead_XL320.clearParam()
+    groupSyncRead_XM430.clearParam()
     for DXL1_ID in DXL_XL320 +  DXL_LenganAtas + DXL_Pinggang + DXL_XM430:
         dxl_comm_result, dxl_error = packetHandler.write1ByteTxRx(portHandler, DXL1_ID, XL320_TORQUE_ENABLE if DXL1_ID < 13 else XM430_ADDR_TORQUE_ENABLE, TORQUE_ENABLE)
         if dxl_comm_result != COMM_SUCCESS:
@@ -281,10 +285,22 @@ def play_motion_gui_v6():
                 dxl_present_condition_xm430 = []
                 dxl_present_condition_xl320 = []
 
-                groupSyncReadMove_XL320.txRxPacket()
-                groupSyncReadMove_XM430.txRxPacket()
-                groupSyncRead_XM430.txRxPacket()
-                groupSyncRead_XL320.txRxPacket()
+                dxl_comm_result = groupSyncReadMove_XL320.txRxPacket()
+                if dxl_comm_result != COMM_SUCCESS:
+                    print("1")
+                    print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
+                dxl_comm_result = groupSyncReadMove_XM430.txRxPacket()
+                if dxl_comm_result != COMM_SUCCESS:
+                    print("2")
+                    print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
+                dxl_comm_result = groupSyncRead_XM430.txRxPacket()
+                if dxl_comm_result != COMM_SUCCESS:
+                    print("3")
+                    print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
+                dxl_comm_result = groupSyncRead_XL320.txRxPacket()
+                if dxl_comm_result != COMM_SUCCESS:
+                    print("4")
+                    print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
 
                 for DXL_ID in DXL_IDS:
                     if DXL_ID >= 13:
